@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN     // cria eventos e ingressos
+  USER      // compra ingressos
+  STAFF     // valida ingressos no dia do evento
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  phone     String?   @unique
+  name      String?
+  role      UserRole  @default(USER)
+  confirmed Boolean   @default(false) 
+
+  tickets   Ticket[]
+  payments  Payment[]
+  authcodes AuthCode[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+
+model AuthCode {
+  id        String   @id @default(cuid())
+  userId    String
+  code      String   // código enviado (ex.: 6 dígitos)
+  expiresAt DateTime // expira em poucos minutos
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Event {
+  id        String    @id @default(cuid())
+  name      String
+  date      DateTime
+  tickets   Ticket[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Ticket {
+  id        String    @id @default(cuid())
+  eventId   String
+  userId    String?
+  price     Int
+  qrCode    String    @unique
+  used      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  event     Event     @relation(fields: [eventId], references: [id])
+  user      User?     @relation(fields: [userId], references: [id])
+  payments  Payment[]
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  stripeId  String        @unique
+  status    PaymentStatus
+  userId    String
+  ticketId  String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  user      User          @relation(fields: [userId], references: [id])
+  ticket    Ticket        @relation(fields: [ticketId], references: [id])
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
