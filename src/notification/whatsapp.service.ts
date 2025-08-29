@@ -17,7 +17,7 @@ export class WhatsappService {
         text: `Seu código de confirmação é: ${code}`,
       },
       {
-        headers: { Authorization: `Bearer ${this.token}` },
+        headers: { apiKey: `${this.token}` },
       },
     );
   }
