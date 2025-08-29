@@ -8,65 +8,51 @@ import { WhatsappService } from 'src/notification/whatsapp.service';
 export class UsersService {
   constructor(private prisma: PrismaService, private whatsapp: WhatsappService) {}
 
- async register(email: string, phone?: string, name?: string) {
-    // cria ou pega usuário
-    let user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) {
-      user = await this.prisma.user.create({
-        data: { email, phone, name, role: UserRole.USER },
-      });
-    }
-
-    // gera código
-    const code = String(randomInt(100000, 999999));
-    await this.prisma.authCode.create({
-      data: {
-        userId: user.id,
-        code,
-        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-      },
-    });
-
-    // aqui você enviaria o código por email/WhatsApp
-        if (phone) {
-      await this.whatsapp.sendCode(phone, code);
-    }
-    console.log(`📨 Código para ${email}: ${code}`);
-
-    return { message: 'Código enviado para seu email/WhatsApp' };
+async register(email: string, phone?: string, name?: string) {
+  const existingUser = await this.prisma.user.findUnique({ where: { email } });
+  if (existingUser) {
+    throw new BadRequestException('Usuário já existe');
   }
 
-  // 2. Confirmação do código
-  async confirmCode(email: string, code: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) throw new BadRequestException('Usuário não encontrado');
+  const user = await this.prisma.user.create({
+    data: { email, phone, name, role: UserRole.USER },
+  });
 
-    const authCode = await this.prisma.authCode.findFirst({
-      where: {
-        userId: user.id,
-        code,
-        used: false,
-        expiresAt: { gt: new Date() },
-      },
-    });
+  return { message: 'Usuário cadastrado com sucesso', user };
+}
 
-    if (!authCode) throw new BadRequestException('Código inválido ou expirado');
+async requestCode(identifier: string) {
+  // tenta achar usuário pelo email ou pelo telefone
+  const user = await this.prisma.user.findFirst({
+    where: {
+      OR: [{ email: identifier }, { phone: identifier }],
+    },
+  });
 
-    await this.prisma.authCode.update({
-      where: { id: authCode.id },
-      data: { used: true },
-    });
+  if (!user) throw new BadRequestException('Usuário não encontrado');
 
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { confirmed: true },
-    });
+  // gera código
+  const code = String(randomInt(100000, 999999));
+  await this.prisma.authCode.create({
+    data: {
+      userId: user.id,
+      code,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+    },
+  });
 
-    // aqui você pode gerar o JWT e retornar
-    return { message: 'Conta confirmada com sucesso!' };
+  // envia por WhatsApp se tiver telefone, senão por email
+  if (user.phone) {
+    await this.whatsapp.sendCode(user.phone, code);
+  } else {
+    // aqui você poderia ter um EmailService
+    console.log(`📧 Código enviado por email para ${user.email}: ${code}`);
   }
 
-  // métodos normais (somente usuários confirmados)
+  return { message: 'Código enviado com sucesso' };
+}
+
+
   findOne(id: string) {
     return this.prisma.user.findUnique({ where: { id } });
   }

@@ -25,8 +25,6 @@ model User {
   phone     String?   @unique
   name      String?
   role      UserRole  @default(USER)
-  confirmed Boolean   @default(false) 
-
   tickets   Ticket[]
   payments  Payment[]
   authcodes AuthCode[]

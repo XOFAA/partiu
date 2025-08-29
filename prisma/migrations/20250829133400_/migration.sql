@@ -5,7 +5,6 @@ CREATE TABLE `User` (
     `phone` VARCHAR(191) NULL,
     `name` VARCHAR(191) NULL,
     `role` ENUM('ADMIN', 'USER', 'STAFF') NOT NULL DEFAULT 'USER',
-    `confirmed` BOOLEAN NOT NULL DEFAULT false,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
