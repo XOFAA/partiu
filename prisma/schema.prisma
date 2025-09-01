@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -19,20 +13,35 @@ enum UserRole {
   STAFF     // valida ingressos no dia do evento
 }
 
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELED
+  REFUNDED
+}
+
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  phone     String?   @unique
+  id        String     @id @default(cuid())
+  email     String     @unique
+  phone     String?    @unique
   name      String?
-  role      UserRole  @default(USER)
+  role      UserRole   @default(USER)
+  
+  orders    Order[]
   tickets   Ticket[]
   payments  Payment[]
   authcodes AuthCode[]
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
-
 
 model AuthCode {
   id        String   @id @default(cuid())
@@ -46,26 +55,57 @@ model AuthCode {
 }
 
 model Event {
-  id        String    @id @default(cuid())
-  name      String
-  date      DateTime
+  id          String       @id @default(cuid())
+  name        String
+  date        DateTime
+  thumbDestaque String?
+  thumbDesktop String?
+  thumbMobile String?
+  ticketTypes TicketType[]
+  tickets     Ticket[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model TicketType {
+  id        String   @id @default(cuid())
+  eventId   String
+  name      String   // Ex.: Pista, VIP, Meia
+  price     Int
+  quantity  Int      // Estoque disponível
+  
+  event     Event    @relation(fields: [eventId], references: [id])
   tickets   Ticket[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
 }
 
 model Ticket {
-  id        String    @id @default(cuid())
-  eventId   String
-  userId    String?
-  price     Int
-  qrCode    String    @unique
-  used      Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id          String      @id @default(cuid())
+  ticketTypeId String
+  eventId     String
+  userId      String?
+  orderId     String?
+  qrCode      String      @unique
+  used        Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
-  event     Event     @relation(fields: [eventId], references: [id])
-  user      User?     @relation(fields: [userId], references: [id])
+  event       Event       @relation(fields: [eventId], references: [id])
+  ticketType  TicketType  @relation(fields: [ticketTypeId], references: [id])
+  user        User?       @relation(fields: [userId], references: [id])
+  order       Order?      @relation(fields: [orderId], references: [id])
+  payments    Payment[]
+}
+
+model Order {
+  id        String     @id @default(cuid())
+  userId    String
+  total     Int
+  status    OrderStatus @default(PENDING)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id])
+  tickets   Ticket[]
   payments  Payment[]
 }
 
@@ -73,18 +113,13 @@ model Payment {
   id        String        @id @default(cuid())
   stripeId  String        @unique
   status    PaymentStatus
+  orderId   String
   userId    String
-  ticketId  String
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
+  order     Order         @relation(fields: [orderId], references: [id])
   user      User          @relation(fields: [userId], references: [id])
-  ticket    Ticket        @relation(fields: [ticketId], references: [id])
-}
 
-enum PaymentStatus {
-  PENDING
-  SUCCEEDED
-  FAILED
-  REFUNDED
+  Ticket Ticket[]
 }

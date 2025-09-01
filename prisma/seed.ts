@@ -7,7 +7,7 @@ async function main() {
     data: {
       email: 'admin@eventos.com',
       name: 'Admin Master',
-      phone: '+5592993795370',
+      phone: '5592993795370',
       role: UserRole.ADMIN,
     },
   });

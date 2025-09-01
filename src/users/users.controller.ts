@@ -1,6 +1,6 @@
 // src/users/users.controller.ts
-import { 
-  Body, Controller, Delete, Get, Patch, Post, Req, UseGuards 
+import {
+  Body, Controller, Delete, Get, Patch, Post, Req, UseGuards
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -12,7 +12,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   // 🚀 Cadastro inicial (sem código ainda)
   @Post('register')
@@ -21,11 +21,11 @@ export class UsersController {
     return this.usersService.register(body.email, body.phone, body.name);
   }
 
-@Post('request-code')
-@ApiOperation({ summary: 'Solicitar código para login (WhatsApp ou Email)' })
-requestCode(@Body() body: { identifier: string }) {
-  return this.usersService.requestCode(body.identifier);
-}
+  @Post('request-code')
+  @ApiOperation({ summary: 'Solicitar código para login (WhatsApp ou Email)' })
+  requestCode(@Body() body: { identifier: string }) {
+    return this.usersService.requestCode(body.identifier);
+  }
 
   // ✅ Rotas abaixo só para quem já estiver logado
   @UseGuards(JwtAuthGuard, RolesGuard)
