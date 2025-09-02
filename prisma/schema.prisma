@@ -55,24 +55,27 @@ model AuthCode {
 }
 
 model Event {
-  id          String       @id @default(cuid())
-  name        String
-  date        DateTime
-  thumbDestaque String?
-  thumbDesktop String?
-  thumbMobile String?
-  ticketTypes TicketType[]
-  tickets     Ticket[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id              String       @id @default(cuid())
+  name            String
+  date            DateTime
+  thumbMobile     String?
+  thumbDesktop    String?
+  thumbDestaque   String?
+  stripeProductId String?      // <- aqui
+  ticketTypes     TicketType[]
+  tickets         Ticket[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 }
 
+
 model TicketType {
-  id        String   @id @default(cuid())
-  eventId   String
-  name      String   // Ex.: Pista, VIP, Meia
-  price     Int
-  quantity  Int      // Estoque disponível
+  id            String   @id @default(cuid())
+  eventId       String
+  name          String
+  price         Int      // em centavos
+  quantity      Int
+  stripePriceId String?  // <- aqui
   
   event     Event    @relation(fields: [eventId], references: [id])
   tickets   Ticket[]

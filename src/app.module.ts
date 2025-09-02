@@ -5,9 +5,10 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { EventsModule } from './events/events.module';
 import { TicketTypesModule } from './ticket-types/ticket-types.module';
+import { OrdersModule } from './orders/orders.module';
 
 @Module({
-  imports: [UsersModule,AuthModule, EventsModule, TicketTypesModule],
+  imports: [UsersModule,AuthModule, EventsModule, TicketTypesModule, OrdersModule],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -1,14 +1,40 @@
+// src/ticket-types/ticket-types.service.ts
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/database/PrismaService';
+import { StripeService } from 'src/stripe/stripe.service';
 import { CreateTicketTypeDto } from './dto/create-ticket-type.dto';
 import { UpdateTicketTypeDto } from './dto/update-ticket-type.dto';
 
 @Injectable()
 export class TicketTypesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private stripe: StripeService,
+  ) {}
 
-  create(data: CreateTicketTypeDto) {
-    return this.prisma.ticketType.create({ data });
+  async create(data: CreateTicketTypeDto) {
+    // 1. Busca o evento para pegar stripeProductId
+    const event = await this.prisma.event.findUnique({
+      where: { id: data.eventId },
+    });
+
+    if (!event?.stripeProductId) {
+      throw new Error('Evento não encontrado ou sem Stripe Product vinculado');
+    }
+
+    // 2. Cria o Price no Stripe
+    const price = await this.stripe.createPrice(
+      event.stripeProductId,
+      data.price * 100, // Stripe trabalha em centavos
+    );
+
+    // 3. Salva no banco junto com stripePriceId
+    return this.prisma.ticketType.create({
+      data: {
+        ...data,
+        stripePriceId: price.id,
+      },
+    });
   }
 
   findAll() {
